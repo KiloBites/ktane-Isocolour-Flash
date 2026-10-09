@@ -108,8 +108,8 @@ GameObject:
   - component: {fileID: 4182846922419878}
   - component: {fileID: 114944640548819244}
   - component: {fileID: 114339362089785142}
-  - component: {fileID: 114655116690600614}
   - component: {fileID: 114911604824860726}
+  - component: {fileID: 114802319586456218}
   m_Layer: 0
   m_Name: Isocolour Flash
   m_TagString: Untagged
@@ -1053,17 +1053,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HighlightScale: {x: 1, y: 1, z: 1}
   OutlineAmount: 0
---- !u!114 &114655116690600614
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1461983400456500}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 2144496390, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &114674805323840316
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1077,6 +1066,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShaderNames:
   - KT/Mobile/Diffuse
+--- !u!114 &114802319586456218
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1461983400456500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48ea4dc704418f54db442d3eaa668e92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Audio: {fileID: 114911604824860726}
+  Module: {fileID: 114944640548819244}
+  Buttons:
+  - {fileID: 114575629939699836}
+  - {fileID: 114489861101921422}
+  Indicator: {fileID: 102622222406489420}
 --- !u!114 &114852835913631252
 MonoBehaviour:
   m_ObjectHideFlags: 1

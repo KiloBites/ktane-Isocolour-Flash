@@ -42,8 +42,6 @@ public class ICFGenerator
         14, 6, 3, 10,
         11, 15, 7, 2
     };
-
-    private readonly Dictionary<CFColor, CFMove> _colorToMove;
     
     public List<Slide> GeneratedSlides { get; private set; }
     public List<List<CFButton>> GeneratedAnswers { get; private set; }
@@ -55,8 +53,6 @@ public class ICFGenerator
     public ICFGenerator(CFColor usedColor)
     {
         _moveColors = _startingColors[(int)usedColor];
-
-        _colorToMove = _moveColors.ToDictionary(x => x, x => (CFMove)Array.IndexOf(_moveColors, x));
 
         var startingCoord = Range(0, 16);
         
@@ -99,13 +95,22 @@ public class ICFGenerator
 
             _coord.MakeMove(lastMove);
             
-            while (_colorToMove[_modifiedGrid[_coord.X, _coord.Y]] == CFMove.Void)
+            while (ObtainMove(_coord) == CFMove.Void)
                 _coord.MakeMove(lastMove);
             
-            lastMove = _colorToMove[_modifiedGrid[_coord.X, _coord.Y]];
+            lastMove = ObtainMove(_coord);
         }
 
         GeneratedAnswers = GenerateButtonSequence();
+    }
+    
+    private CFMove ObtainMove(Coord coord) => (CFMove)_moveColors.IndexOf(x => _modifiedGrid[_coord.X, _coord.Y] == x);
+
+    public static int GrabIndex(List<CFButton> moves)
+    {
+        var combinations = Enumerable.Range(0, 4).SelectMany(x => Enumerable.Range(0, 4).Select(y => _logicTable[1][y].Concat(_logicTable[0][x]).ToArray())).ToArray();
+
+        return combinations.IndexOf(moves.SequenceEqual);
     }
 
     private List<List<CFButton>> GenerateButtonSequence()
@@ -118,7 +123,7 @@ public class ICFGenerator
         {
             var seq = new List<CFButton>();
 
-            var coords = Enumerable.Range(0, 16).Select(x => new Coord(x / 4, x % 4)).Where(x => _colorToMove[_modifiedGrid[x.X, x.Y]] == move).ToArray();
+            var coords = Enumerable.Range(0, 16).Select(x => new Coord(x / 4, x % 4)).Where(x => ObtainMove(x) == move).ToArray();
 
             foreach (var coord in coords)
             {
@@ -144,6 +149,6 @@ public class ICFGenerator
             area.Add(newCell);
         }
 
-        return area.Count(x => _colorToMove[_modifiedGrid[x.X, x.Y]] == CFMove.Void) == 3;
+        return area.Count(x => ObtainMove(x) == CFMove.Void) == 3;
     }
 }
