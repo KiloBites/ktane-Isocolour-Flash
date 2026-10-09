@@ -22,6 +22,7 @@ public class IsocolourFlashScript : MonoBehaviour
 	private List<List<CFButton>> _sequences;
 	private readonly List<CFButton> _submittedSequence = new List<CFButton>();
 
+	private CFColor _selectedColor;
 	private ICFGenerator _generator;
 	private List<Slide> _slides;
 
@@ -42,8 +43,10 @@ public class IsocolourFlashScript : MonoBehaviour
 	private void Start()
 	{
 		Indicator.text = string.Empty;
+
+		_selectedColor = (CFColor)Range(0, 6);
 		
-		_generator = new ICFGenerator((CFColor)Range(0, 6));
+		_generator = new ICFGenerator(_selectedColor);
 
 		_slides = _generator.GeneratedSlides.ToList();
 		_sequences = _generator.GeneratedAnswers.ToList();

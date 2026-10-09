@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -5,6 +6,9 @@ public static class ICFExtensions
 {
     public static T[,] To2DArray<T>(this IEnumerable<IEnumerable<T>> source)
     {
+        if (source == null || source.Any(x => x == null))
+            throw new ArgumentNullException(nameof(source));
+        
         var data = source.Select(x => x.ToArray()).ToArray();
         var rows = data.Length;
         var cols = data.Max(x => x.Length);
@@ -19,6 +23,9 @@ public static class ICFExtensions
 
     public static T[,] To2DArray<T>(this T[,] source)
     {
+        if (source == null)
+            throw new ArgumentNullException(nameof(source));
+        
         var rows = source.GetLength(0);
         var cols = source.GetLength(1);
         var result = new T[rows, cols];

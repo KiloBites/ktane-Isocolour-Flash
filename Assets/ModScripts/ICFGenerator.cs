@@ -4,6 +4,7 @@ using System.Linq;
 using static CFColor;
 using static CFButton;
 using static UnityEngine.Random;
+using static UnityEngine.Debug;
 
 public class ICFGenerator
 {
@@ -49,10 +50,12 @@ public class ICFGenerator
     private readonly CFColor[,] _grid, _modifiedGrid;
     private Coord _coord;
     private readonly CFColor[] _moveColors;
+    private readonly CFColor _usedColor;
 
     public ICFGenerator(CFColor usedColor)
     {
         _moveColors = _startingColors[(int)usedColor];
+        _usedColor = usedColor;
 
         var startingCoord = Range(0, 16);
         
@@ -91,7 +94,9 @@ public class ICFGenerator
             if (IsStuck(_coord, new[] { CFMove.Left, CFMove.Right }.Contains(lastMove)))
                 break;
             
-            _modifiedGrid[_coord.X, _coord.Y] = _moveColors[Array.IndexOf(_moveColors, _modifiedGrid[_coord.X, _coord.Y]) + 1];
+            var newColor = Array.IndexOf(_moveColors, _modifiedGrid[_coord.X, _coord.Y]) + 1;
+            
+            _modifiedGrid[_coord.X, _coord.Y] = _moveColors[newColor];
 
             _coord.MakeMove(lastMove);
             
@@ -103,8 +108,8 @@ public class ICFGenerator
 
         GeneratedAnswers = GenerateButtonSequence();
     }
-    
-    private CFMove ObtainMove(Coord coord) => (CFMove)_moveColors.IndexOf(x => _modifiedGrid[_coord.X, _coord.Y] == x);
+
+    private CFMove ObtainMove(Coord coord) => (CFMove)_startingColors[(int)_usedColor].IndexOf(x => _modifiedGrid[coord.X, coord.Y] == x);
 
     public static int GrabIndex(List<CFButton> moves)
     {
