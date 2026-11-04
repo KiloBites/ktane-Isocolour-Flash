@@ -8,7 +8,7 @@ public static class ICFExtensions
     {
         if (source == null || source.Any(x => x == null))
             throw new ArgumentNullException(nameof(source));
-        
+
         var data = source.Select(x => x.ToArray()).ToArray();
         var rows = data.Length;
         var cols = data.Max(x => x.Length);
@@ -17,17 +17,15 @@ public static class ICFExtensions
         for (int i = 0; i < rows; i++)
             for (int j = 0; j < data[i].Length; j++)
                 result[i, j] = data[i][j];
-        
+
         return result;
     }
 
     public static T[,] To2DArray<T>(this T[,] source)
     {
-        if (source == null)
-            throw new ArgumentNullException(nameof(source));
-        
         var rows = source.GetLength(0);
         var cols = source.GetLength(1);
+
         var result = new T[rows, cols];
         
         for (int i = 0; i < rows; i++)

@@ -1,39 +1,46 @@
 using System;
 using static CFMove;
 
-public struct Coord
+public struct Coord : IEquatable<Coord>
 {
-    public int X { get; private set; }
-    public int Y { get; private set; }
+    public int Row { get; private set; }
+    public int Column { get; private set; }
     
-    // In this instance, X is the row, and Y is the column. Keep in mind the grid is fixed.
-
-    public Coord(int x, int y)
+    public Coord(int row, int column)
     {
-        X = x;
-        Y = y;
+        Row = row;
+        Column = column;
     }
 
-    public override string ToString() => $"{"ABCD"[Y]}{X + 1}";
+    public override bool Equals(object obj) => obj is Coord && Equals((Coord)obj);
+
+    public override int GetHashCode() => Row * 4 + Column;
+
+    public override string ToString() => $"{"ABCD"[Column]}{Row + 1}";
+
+    public bool Equals(Coord other) => Row == other.Row && Column == other.Column;
+    
+    public static bool operator ==(Coord a, Coord b) => a.Equals(b);
+    public static bool operator !=(Coord a, Coord b) => !a.Equals(b);
 
     public void MakeMove(CFMove move)
     {
         switch (move)
         {
             case Left:
-                Y = (Y - 1 + 4) % 4;
+                Column = (Column - 1 + 4) % 4;
                 break;
             case Right:
-                Y = (Y + 1) % 4;
+                Column = (Column + 1) % 4;
                 break;
             case Up:
-                X = (X - 1 + 4) % 4;
+                Row = (Row - 1 + 4) % 4;
                 break;
             case Down:
-                X = (X + 1) % 4;
+                Row = (Row + 1) % 4;
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(move), move, $"{move} is not a valid move");
+                throw new ArgumentOutOfRangeException(nameof(move), move, null);
         }
     }
 }

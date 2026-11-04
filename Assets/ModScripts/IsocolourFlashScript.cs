@@ -19,13 +19,11 @@ public class IsocolourFlashScript : MonoBehaviour
 	private int _moduleId;
 	private bool _moduleSolved, _isActivated;
 
-	private List<List<CFButton>> _sequences;
-	private readonly List<CFButton> _submittedSequence = new List<CFButton>();
-
-	private CFColor _selectedColor;
 	private ICFGenerator _generator;
-	private List<Slide> _slides;
+	private CFColor _selectedColor;
 
+	private List<Slide> _slides;
+	
 	private readonly Coroutine[] _buttonAnims = new Coroutine[2];
 	private Coroutine _slideCycle;
 
@@ -33,12 +31,8 @@ public class IsocolourFlashScript : MonoBehaviour
     {
 		_moduleId = _moduleIdCounter++;
 		
-		foreach (var button in Buttons)
-			button.OnInteract += () => { ButtonPress(button); return false; };
-		
 		Module.OnActivate += Activate;
     }
-
 	
 	private void Start()
 	{
@@ -48,56 +42,16 @@ public class IsocolourFlashScript : MonoBehaviour
 		
 		_generator = new ICFGenerator(_selectedColor);
 
-		_slides = _generator.GeneratedSlides.ToList();
-		_sequences = _generator.GeneratedAnswers.ToList();
+		_slides = _generator.GeneratedSlides;
 	}
 
 	private void Activate()
 	{
 		_isActivated = true;
-		_slideCycle = StartCoroutine(DisplaySlides());
+		_slideCycle = StartCoroutine(CycleSlides());
 	}
 
-	private void ButtonPress(KMSelectable button)
-	{
-		button.AddInteractionPunch(0.4f);
-
-		var ix = (CFButton)Array.IndexOf(Buttons, button);
-		
-		if (_moduleSolved || !_isActivated)
-			return;
-		
-		_submittedSequence.Add(ix);
-
-		if (_submittedSequence.Count != 4)
-			return;
-
-		if (_sequences.First().SequenceEqual(_submittedSequence))
-		{
-			_sequences.RemoveAt(0);
-			
-			var slideIndex = ICFGenerator.GrabIndex(_submittedSequence);
-
-			_slides[slideIndex % 8].Mark(slideIndex < 8);
-			
-			_submittedSequence.Clear();
-
-			if (_sequences.Count != 0)
-				return;
-			
-			_moduleSolved = true;
-			Module.HandlePass();
-		}
-		else
-		{
-			Module.HandleStrike();
-
-			_slides = _generator.GeneratedSlides.ToList();
-			_sequences = _generator.GeneratedAnswers.ToList();
-		}
-	}
-
-	private IEnumerator DisplaySlides()
+	private IEnumerator CycleSlides()
 	{
 		while (true)
 		{
@@ -105,13 +59,12 @@ public class IsocolourFlashScript : MonoBehaviour
 			{
 				Indicator.text = slide.Word.ToString().ToUpperInvariant();
 				Indicator.color = slide.GetColor();
-
 				yield return new WaitForSeconds(0.75f);
 			}
-
+			
 			Indicator.text = string.Empty;
 
-			yield return new WaitForSeconds(1.5f);
+			yield return new WaitForSeconds(1);
 		}
 	}
 

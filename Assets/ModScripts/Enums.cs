@@ -7,7 +7,7 @@ public enum CFColor
     Magenta,
     White,
     Black
-}
+};
 
 public enum CFButton
 {

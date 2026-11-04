@@ -1,4 +1,5 @@
 using UnityEngine;
+using static CFColor;
 
 public struct Slide
 {
@@ -11,6 +12,8 @@ public struct Slide
         _colour = colour;
     }
 
+    public override string ToString() => $"[Word: {Word}, Colour: {_colour}]";
+
     private static readonly Color[] _colors =
     {
         Color.red,
@@ -21,16 +24,14 @@ public struct Slide
         Color.white,
         new Color(0.25f, 0.25f, 0.25f)
     };
-
+    
     public Color GetColor() => _colors[(int)_colour];
 
-    public void Mark(bool firstHalf)
+    public void Mark(bool markingWord)
     {
-        if (firstHalf)
-            Word = CFColor.Black;
+        if (markingWord)
+            Word = Black;
         else
-            _colour = CFColor.Black;
+            _colour = Black;
     }
-    
-    public override string ToString() => $"Word: {Word}, Colour: {_colour}";
 }
