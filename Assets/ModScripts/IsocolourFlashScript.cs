@@ -314,9 +314,24 @@ public class IsocolourFlashScript : MonoBehaviour
     }
 
 	private IEnumerator TwitchHandleForcedSolve()
-    {
-		yield return null;
-    }
+	{
+		if (_submittedButtons.Any())
+			_submittedButtons.Clear();
+
+		while (_answers.Count > 0)
+		{
+			var index = _movePriority != null ? _applicableMoves.IndexOf(x => x == _movePriority.Value) : Range(0, _answers.Count);
+
+			var seq = _answers[index].Select(ICFGenerator.CoordToSequence).ToList();
+			
+			for (int i = 0; i < seq.Count; i++)
+				foreach (var button in seq[i])
+				{
+					Buttons[(int)button].OnInteract();
+					yield return new WaitUntil(() => _buttonAnims[(int)button] == null);
+				}
+		}
+	}
 
 
 }
