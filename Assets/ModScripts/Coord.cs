@@ -19,9 +19,6 @@ public struct Coord : IEquatable<Coord>
     public override string ToString() => $"{"ABCD"[Column]}{Row + 1}";
 
     public bool Equals(Coord other) => Row == other.Row && Column == other.Column;
-    
-    public static bool operator ==(Coord a, Coord b) => a.Equals(b);
-    public static bool operator !=(Coord a, Coord b) => !a.Equals(b);
 
     public void MakeMove(CFMove move)
     {
@@ -42,5 +39,12 @@ public struct Coord : IEquatable<Coord>
             default:
                 throw new ArgumentOutOfRangeException(nameof(move), move, null);
         }
+    }
+
+    public bool CoordOnWord(out int index)
+    {
+        index = Row * 4 + Column;
+
+        return index < 8;
     }
 }

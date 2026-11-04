@@ -50,9 +50,13 @@ public class ICFGenerator
      private readonly CFColor[,] _grid;
      
      public List<Slide> GeneratedSlides { get; private set; }
-     public List<Coord> GeneratedAnswers { get; private set; }
+     public List<List<Coord>> GeneratedAnswers { get; private set; }
      
      public readonly List<string> Logs = new List<string>();
+
+     public readonly List<CFMove> ApplicableMoves;
+
+     public string LogGrid(bool unmodified) => Enumerable.Range(0, 4).Select(r => Enumerable.Range(0, 4).Select(c => $"[{(unmodified ? _unmodifiedGrid : _grid)[r, c].ToString().First()}]").Join("")).Join(";");
 
      public ICFGenerator(CFColor selectedColor)
      {
@@ -61,7 +65,7 @@ public class ICFGenerator
 
           var randomIndex = Range(0, 16);
 
-          var generatedColors = Enumerable.Range(0, 16).Select(x => x == randomIndex ? selectedColor : _moveColors.PickRandom()).ToArray();
+          var generatedColors = Enumerable.Range(0, 16).Select(x => x == randomIndex ? selectedColor : _moveColors.PickRandom()).ToArray().Shuffle();
           
           GeneratedSlides = GenerateSlides(generatedColors);
 
@@ -69,6 +73,8 @@ public class ICFGenerator
           _grid = _unmodifiedGrid.To2DArray();
           
           ModifyGrid(selectedColor);
+
+          GeneratedAnswers = GenerateAnswers(out ApplicableMoves);
      }
 
      private void ModifyGrid(CFColor startingColor)
@@ -87,6 +93,8 @@ public class ICFGenerator
                
                var newColor = Array.IndexOf(_moveColors, _grid[currentCoord.Row, currentCoord.Column]) + 1;
                
+               Logs.Add($"The color at {currentCoord} ({_grid[currentCoord.Row, currentCoord.Column]}) gets changed to {_moveColors[newColor]}");
+               
                _grid[currentCoord.Row, currentCoord.Column] = _moveColors[newColor];
                
                currentCoord.MakeMove(currentMove);
@@ -94,10 +102,10 @@ public class ICFGenerator
                while (_colorToMove[_grid[currentCoord.Row, currentCoord.Column]] == CFMove.Void)
                     currentCoord.MakeMove(currentMove);
                
+               Logs.Add($"Moved {currentMove.ToString().ToLowerInvariant()} to {currentCoord}");
+               
                currentMove = _colorToMove[_grid[currentCoord.Row, currentCoord.Column]];
           }
-
-          GeneratedAnswers = GenerateAnswers();
      }
 
      public static Coord GetCoordFromInput(List<CFButton> submittedButtons)
@@ -106,7 +114,15 @@ public class ICFGenerator
 
           var rowCol = group.Select((x, i) => _logicTable[i].IndexOf(x.SequenceEqual)).ToArray();
           
-          return new Coord(rowCol[0], rowCol[1]);
+          return new Coord(rowCol[1], rowCol[0]);
+     }
+
+     public static CFButton[] CoordToSequence(Coord coord)
+     {
+          var column = _logicTable[0][coord.Column];
+          var row =  _logicTable[1][coord.Row];
+
+          return column.Concat(row).ToArray();
      }
      
 
@@ -117,18 +133,24 @@ public class ICFGenerator
           return Enumerable.Range(0, 8).Select(x => new Slide(group[0][x], group[1][x])).ToList();
      }
 
-     private List<Coord> GenerateAnswers()
+     private List<List<Coord>> GenerateAnswers(out List<CFMove> availableMoves)
      {
+          var answers = new List<List<Coord>>();
+
           var moves = ((CFMove[])Enum.GetValues(typeof(CFMove))).Where(x => x != CFMove.Void).ToArray();
 
-          var gridCoords = Enumerable.Range(0, 16).Select(x => new Coord(x / 4, x % 4)).ToArray();
-
-          var answers = new List<Coord>();
-          
           foreach (var move in moves)
-               answers.AddRange(gridCoords.Where(x => _colorToMove[_grid[x.Row, x.Column]] == move));
+          {
+               var coords = new List<Coord>();
+               
+               coords.AddRange(Enumerable.Range(0, 16).Select(x => new Coord(x / 4, x % 4)).Where(x => _colorToMove[_grid[x.Row, x.Column]] == move).ToList());
+               
+               answers.Add(coords);
+          }
+
+          availableMoves = moves.Where(x => answers[(int)x].Count > 0).ToList();
           
-          return answers;
+          return answers.Where(x => x.Count > 0).ToList();
      }
 
      private bool IsStuck(Coord coord, bool needRow)
@@ -145,4 +167,6 @@ public class ICFGenerator
           
           return area.Count(x => _colorToMove[_grid[x.Row, x.Column]] == CFMove.Void) == 3;
      }
+
+     public bool IsVoid(Coord coord) => _colorToMove[_grid[coord.Row, coord.Column]] == CFMove.Void;
 }
