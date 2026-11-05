@@ -34,4 +34,15 @@ public static class ICFExtensions
         
         return result;
     }
+
+    public static List<T> Reinitialize<T>(this List<T> list1, List<T> list2)
+    {
+        if (list1.Count != list2.Count)
+            throw new Exception("The lists do not match up!");
+
+        for (int i = 0; i < list1.Count; i++)
+            list1[i] = list2[i];
+
+        return list1;
+    }
 }

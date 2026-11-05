@@ -1,0 +1,10 @@
+{
+  "name": "isocolourFlash-Editor",
+  "references": [
+    "isocolourFlash"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}

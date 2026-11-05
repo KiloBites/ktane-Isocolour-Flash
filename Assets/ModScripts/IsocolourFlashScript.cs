@@ -21,14 +21,14 @@ public class IsocolourFlashScript : MonoBehaviour
 
 	private ICFGenerator _generator;
 	private CFColor _selectedColor;
-
-	private CFMove? _movePriority;
+	
+	private CFMove _movePriority;
 
 	private List<Slide> _slides;
 	private List<List<Coord>> _answers;
 	private List<CFMove> _applicableMoves;
 
-	private readonly bool[] _isMarked = new bool[16];
+	private bool[] _isMarked = new bool[16];
 	
 	private readonly List<CFButton> _submittedButtons = new List<CFButton>();
 	
@@ -55,6 +55,8 @@ public class IsocolourFlashScript : MonoBehaviour
 		_slides = _generator.GeneratedSlides.ToList();
 		_answers = _generator.GeneratedAnswers.ToList();
 		_applicableMoves = _generator.ApplicableMoves;
+
+		_movePriority = _applicableMoves.First();
 		
 		Log($"[Isocolour Flash #{_moduleId}] Presented slides:");
 		
@@ -115,27 +117,22 @@ public class IsocolourFlashScript : MonoBehaviour
 
 			return;
 		}
+		
 
-		if (_movePriority == null)
+		if (_answers.First().Contains(inputToCoord))
 		{
-			var index = _answers.IndexOf(x => x.Contains(inputToCoord));
-			_movePriority = _applicableMoves[index];
-		}
-
-		var listIndex = _applicableMoves.IndexOf(x => x == _movePriority.Value);
-
-		if (_answers[listIndex].Contains(inputToCoord))
-		{
-			Log($"[Isocolour Flash #{_moduleId}] {inputToCoord} has been marked successfully from the {_movePriority.Value.ToString().ToLowerInvariant()} square group");
+			Log($"[Isocolour Flash #{_moduleId}] {inputToCoord} has been marked successfully from the {_movePriority.ToString().ToLowerInvariant()} square group");
 			
-			_answers[listIndex].Remove(inputToCoord);
+			_answers.First().Remove(inputToCoord);
 
-			if (_answers[listIndex].Count == 0)
+			if (_answers.First().Count == 0)
 			{
-				_answers.RemoveAt(listIndex);
-				_applicableMoves.Remove(_movePriority.Value);
-				_movePriority = null;
+				_answers.RemoveAt(0);
+				_applicableMoves.RemoveAt(0);
 			}
+			
+			if (_answers.Count > 0)
+				_movePriority = _applicableMoves.First();
 
 			if (_answers.Count != 0)
 			{
@@ -174,6 +171,10 @@ public class IsocolourFlashScript : MonoBehaviour
 			Module.HandleStrike();
 
 			_submittedButtons.Clear();
+
+			_isMarked = new bool[16];
+
+			_slides.Reinitialize(_generator.GeneratedSlides.ToList());
 		}
 	}
 
@@ -246,13 +247,13 @@ public class IsocolourFlashScript : MonoBehaviour
 		switch (split[0])
 		{
 			case "PRESS":
-				if (split.Length == 1 || split.Skip(1).Count() != 4)
+				if (split.Length == 1 || (split.Length > 2 && split.Skip(1).Count() != 4))
 				{
 					yield return "sendtochaterror Please specify what buttons to press!";
 					yield break;
 				}
 
-				if (split[1].Length > 4 || split.Skip(1).Count() > 4)
+				if (split[1].Length > 4 || (split.Length > 2 && split.Skip(1).Count() > 4))
 				{
 					yield return "sendtochaterror Too many parameters!";
 					yield break;
@@ -320,12 +321,10 @@ public class IsocolourFlashScript : MonoBehaviour
 
 		while (_answers.Count > 0)
 		{
-			var index = _movePriority != null ? _applicableMoves.IndexOf(x => x == _movePriority.Value) : Range(0, _answers.Count);
-
-			var seq = _answers[index].Select(ICFGenerator.CoordToSequence).ToList();
+			var buttonSeqSet = _answers.First().Select(ICFGenerator.CoordToSequence).ToList().Shuffle();
 			
-			for (int i = 0; i < seq.Count; i++)
-				foreach (var button in seq[i])
+			foreach (var buttonSeq in buttonSeqSet)
+				foreach (var button in buttonSeq)
 				{
 					Buttons[(int)button].OnInteract();
 					yield return new WaitUntil(() => _buttonAnims[(int)button] == null);
