@@ -17,18 +17,18 @@ public class IsocolourFlashScript : MonoBehaviour
 
 	private static int _moduleIdCounter = 1;
 	private int _moduleId;
-	private bool _moduleSolved, _isActivated;
+	private bool _moduleSolved;
 
 	private ICFGenerator _generator;
 	private CFColor _selectedColor;
-	
-	private CFMove _movePriority;
 
 	private List<Slide> _slides;
 	private List<List<Coord>> _answers;
-	private List<CFMove> _applicableMoves;
 
-	private bool[] _isMarked = new bool[16];
+	private int _groupIndex = 0;
+	private readonly List<Coord> _submittedSubGroup = new List<Coord>();
+	
+	private readonly List<Coord> _submittedCoords = new List<Coord>();
 	
 	private readonly List<CFButton> _submittedButtons = new List<CFButton>();
 	
@@ -40,8 +40,6 @@ public class IsocolourFlashScript : MonoBehaviour
 		
 		foreach (var button in Buttons)
 			button.OnInteract += () => { ButtonPress(button); return false; };
-		
-		Module.OnActivate += Activate;
     }
 	
 	private void Start()
@@ -54,9 +52,6 @@ public class IsocolourFlashScript : MonoBehaviour
 
 		_slides = _generator.GeneratedSlides.ToList();
 		_answers = _generator.GeneratedAnswers.ToList();
-		_applicableMoves = _generator.ApplicableMoves;
-
-		_movePriority = _applicableMoves.First();
 		
 		Log($"[Isocolour Flash #{_moduleId}] Presented slides:");
 		
@@ -88,7 +83,7 @@ public class IsocolourFlashScript : MonoBehaviour
 
 		_buttonAnims[(int)buttonIndex] = StartCoroutine(PressAnimation(buttonIndex));
 
-		if (_moduleSolved || !_isActivated)
+		if (_moduleSolved)
 			return;
 		
 		_submittedButtons.Add(buttonIndex);
@@ -98,43 +93,45 @@ public class IsocolourFlashScript : MonoBehaviour
 
 		var inputToCoord = ICFGenerator.GetCoordFromInput(_submittedButtons);
 
-		if (_generator.IsVoid(inputToCoord))
+		if (_generator.VoidCoordinates.Contains(inputToCoord))
 		{
 			Log($"[Isocolour Flash #{_moduleId}] You are trying to submit a void square at {inputToCoord}. Strike!");
 			Module.HandleStrike();
 			
 			_submittedButtons.Clear();
+
+			Reset();
 			
 			return;
 		}
 
-		if (_isMarked[inputToCoord.Row * 4 + inputToCoord.Column])
+		if (_submittedCoords.Contains(inputToCoord))
 		{
-			Log($"[Isocolour Flash #{_moduleId}] You are inputting a coordinate that's already marked. Strike!");
+			Log($"[Isocolour Flash #{_moduleId}] You are inputting a coordinate that's already marked ({inputToCoord}). Strike!");
 			Module.HandleStrike();
 
 			_submittedButtons.Clear();
+
+			Reset();
 
 			return;
 		}
 		
 
-		if (_answers.First().Contains(inputToCoord))
+		if (_answers[_groupIndex].Contains(inputToCoord))
 		{
-			Log($"[Isocolour Flash #{_moduleId}] {inputToCoord} has been marked successfully from the {_movePriority.ToString().ToLowerInvariant()} square group");
+			Log($"[Isocolour Flash #{_moduleId}] {inputToCoord} has been marked successfully from the {_generator.ApplicableMoves[_groupIndex].ToString().ToLowerInvariant()} square group");
 			
-			_answers.First().Remove(inputToCoord);
+			_submittedSubGroup.Add(inputToCoord);
+			_submittedCoords.Add(inputToCoord);
 
-			if (_answers.First().Count == 0)
+			if (_submittedSubGroup.Count == _answers[_groupIndex].Count)
 			{
-				_answers.RemoveAt(0);
-				_applicableMoves.RemoveAt(0);
+				_submittedSubGroup.Clear();
+				_groupIndex++;
 			}
-			
-			if (_answers.Count > 0)
-				_movePriority = _applicableMoves.First();
 
-			if (_answers.Count != 0)
+			if (_groupIndex != _generator.ApplicableMoves.Count)
 			{
 				Audio.PlaySoundAtTransform("Input Submit", transform);
 				
@@ -146,8 +143,6 @@ public class IsocolourFlashScript : MonoBehaviour
 				modifiedSlide.Mark(onWord);
 
 				_slides[slideIndex % 8] = modifiedSlide;
-
-				_isMarked[slideIndex] = true;
 
 				_submittedButtons.Clear();
 				
@@ -166,23 +161,28 @@ public class IsocolourFlashScript : MonoBehaviour
 		{
 			var invalidIndex = _answers.IndexOf(x => x.Contains(inputToCoord));
 			
-			Log($"[Isocolour Flash #{_moduleId}] You tried to submit an coordinate ({inputToCoord}) that is only in the {_applicableMoves[invalidIndex].ToString().ToLowerInvariant()} square group. Strike!");
+			Log($"[Isocolour Flash #{_moduleId}] You tried to submit an coordinate ({inputToCoord}) that is only in the {_generator.ApplicableMoves[invalidIndex].ToString().ToLowerInvariant()} square group. Strike!");
 			
 			Module.HandleStrike();
 
 			_submittedButtons.Clear();
-
-			_isMarked = new bool[16];
-
-			_slides.Reinitialize(_generator.GeneratedSlides.ToList());
+			
+			Reset();
 		}
 	}
 
-	private void Activate() => _isActivated = true;
+	private void Reset()
+	{
+		_slides = _slides.Reinitialize(_generator.GeneratedSlides.ToList());
+		_submittedCoords.Clear();
+		_submittedSubGroup.Clear();
+		_groupIndex = 0;
+	}
+	
 
 	private void Update()
 	{
-		if (_moduleSolved || !_isActivated)
+		if (_moduleSolved)
 		{
 			if (Indicator.text.Length != 0)
 				Indicator.text = string.Empty;
@@ -310,8 +310,6 @@ public class IsocolourFlashScript : MonoBehaviour
 				yield return "sendtochaterror Invalid command!";
 				yield break;
 		}
-		
-		yield return null;
     }
 
 	private IEnumerator TwitchHandleForcedSolve()
@@ -319,16 +317,14 @@ public class IsocolourFlashScript : MonoBehaviour
 		if (_submittedButtons.Any())
 			_submittedButtons.Clear();
 
-		while (_answers.Count > 0)
+		var buttonGroups = (_groupIndex > 0 ? _answers.Skip(_groupIndex) : _answers).SelectMany(x => x.Where(y => !_submittedCoords.Contains(y)).Select(ICFGenerator.CoordToSequence).ToArray().Shuffle()).ToList();
+
+		var buttonsToPress = buttonGroups.SelectMany(x => x).ToList();
+
+		foreach (var button in buttonsToPress)
 		{
-			var buttonSeqSet = _answers.First().Select(ICFGenerator.CoordToSequence).ToList().Shuffle();
-			
-			foreach (var buttonSeq in buttonSeqSet)
-				foreach (var button in buttonSeq)
-				{
-					Buttons[(int)button].OnInteract();
-					yield return new WaitUntil(() => _buttonAnims[(int)button] == null);
-				}
+			Buttons[(int)button].OnInteract();
+			yield return new WaitUntil(() => _buttonAnims[(int)button] == null);
 		}
 	}
 

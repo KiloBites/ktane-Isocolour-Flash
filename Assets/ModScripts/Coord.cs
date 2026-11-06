@@ -20,6 +20,9 @@ public struct Coord : IEquatable<Coord>
 
     public bool Equals(Coord other) => Row == other.Row && Column == other.Column;
 
+    public static bool operator ==(Coord a, Coord b) => a.Equals(b);
+    public static bool operator !=(Coord a, Coord b) => !a.Equals(b);
+
     public void MakeMove(CFMove move)
     {
         switch (move)

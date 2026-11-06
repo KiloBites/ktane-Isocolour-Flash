@@ -16,8 +16,8 @@ MonoBehaviour:
   author: Kilo Bites
   description: "Quadrata Colorata: \u201CThere are colours in words. A flash in the
     colors. Find the difference, and all will make sense.\u201D\n\nMake movements
-    on a grid and submit colors representing directions."
+    on a grid and submit colors representing directions.\n\nManual by Sameone"
   version: 1
   outputFolder: build
   debugBuild: 1
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: cbd5f37feb0dc449eab338e365ba5fdc, type: 3}

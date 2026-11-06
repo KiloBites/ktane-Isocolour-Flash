@@ -56,6 +56,8 @@ public class ICFGenerator
 
      public readonly List<CFMove> ApplicableMoves;
 
+     public readonly List<Coord> VoidCoordinates;
+
      public string LogGrid(bool unmodified) => Enumerable.Range(0, 4).Select(r => Enumerable.Range(0, 4).Select(c => $"[{(unmodified ? _unmodifiedGrid : _grid)[r, c].ToString().First()}]").Join("")).Join(";");
 
      public ICFGenerator(CFColor selectedColor)
@@ -63,9 +65,15 @@ public class ICFGenerator
           _moveColors = _startingSquareConfig[selectedColor];
           _colorToMove = Enumerable.Range(0, 5).ToDictionary(x => _moveColors[x], x => (CFMove)x);
 
-          var randomIndex = Range(0, 16);
+          var generatedColors = new List<CFColor> { selectedColor };
+          
+          foreach (var moveColor in _moveColors)
+               generatedColors.AddRange(Enumerable.Repeat(moveColor, 2));
+          
+          while (generatedColors.Count < 16)
+               generatedColors.Add(_moveColors.PickRandom());
 
-          var generatedColors = Enumerable.Range(0, 16).Select(x => x == randomIndex ? selectedColor : _moveColors.PickRandom()).ToArray().Shuffle();
+          generatedColors.Shuffle();
           
           GeneratedSlides = GenerateSlides(generatedColors);
 
@@ -75,6 +83,8 @@ public class ICFGenerator
           ModifyGrid(selectedColor);
 
           GeneratedAnswers = GenerateAnswers(out ApplicableMoves);
+
+          VoidCoordinates = Enumerable.Range(0, 16).Select(x => new Coord(x / 4, x % 4)).Where(x => _colorToMove[_grid[x.Row, x.Column]] == CFMove.Void).ToList();
      }
 
      private void ModifyGrid(CFColor startingColor)
@@ -126,7 +136,7 @@ public class ICFGenerator
      }
      
 
-     private static List<Slide> GenerateSlides(CFColor[] colors)
+     private static List<Slide> GenerateSlides(List<CFColor> colors)
      {
           var group = colors.Select((x, i) => new { Index = i, Color = x }).GroupBy(x => x.Index / 8).Select(x => x.Select(c => c.Color).ToArray()).ToList();
 
@@ -167,6 +177,4 @@ public class ICFGenerator
           
           return area.Count(x => _colorToMove[_grid[x.Row, x.Column]] == CFMove.Void) == 3;
      }
-
-     public bool IsVoid(Coord coord) => _colorToMove[_grid[coord.Row, coord.Column]] == CFMove.Void;
 }
