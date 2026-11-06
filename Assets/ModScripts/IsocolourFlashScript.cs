@@ -194,6 +194,7 @@ public class IsocolourFlashScript : MonoBehaviour
 		
 		ShowColor(index == 8 ? (Slide?)null : _slides[index]);
 	}
+	
 	private IEnumerator PressAnimation(CFButton button)
 	{
 		const float duration = 0.1f;
